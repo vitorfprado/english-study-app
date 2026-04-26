@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String      @id @default(cuid())
+  name        String
+  email       String      @unique
+  passwordHash String     @map("password_hash")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  decks       Deck[]
+  reviews     Review[]
+  aiUsageLogs AIUsageLog[]
+
+  @@map("users")
+}
+
+model Deck {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  name        String
+  description String?
+  theme       String
+  level       String
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  user        User     @relation(fields: [userId], references: [id])
+  cards       Card[]
+
+  @@map("decks")
+}
+
+model Card {
+  id                 String   @id @default(cuid())
+  deckId             String   @map("deck_id")
+  sourceTextPt       String   @map("source_text_pt")
+  expectedAnswerEn   String   @map("expected_answer_en")
+  explanationPt      String   @map("explanation_pt")
+  alternativeAnswers Json     @default("[]") @map("alternative_answers")
+  tags               Json     @default("[]")
+  level              String
+  nextReviewAt       DateTime @default(now()) @map("next_review_at")
+  intervalDays       Int      @default(1) @map("interval_days")
+  easeFactor         Float    @default(2.5) @map("ease_factor")
+  reviewCount        Int      @default(0) @map("review_count")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  deck               Deck     @relation(fields: [deckId], references: [id])
+  reviews            Review[]
+
+  @@map("cards")
+}
+
+model Review {
+  id               String   @id @default(cuid())
+  cardId            String   @map("card_id")
+  userId            String   @map("user_id")
+  userAnswer        String   @map("user_answer")
+  correctedAnswer   String   @map("corrected_answer")
+  aiFeedbackPt      String   @map("ai_feedback_pt")
+  grammarTipPt      String   @map("grammar_tip_pt")
+  score             Int
+  wasCorrect        Boolean  @map("was_correct")
+  difficultyRating  String   @map("difficulty_rating")
+  reviewedAt        DateTime @default(now()) @map("reviewed_at")
+  nextReviewAt      DateTime @map("next_review_at")
+  card              Card     @relation(fields: [cardId], references: [id])
+  user              User     @relation(fields: [userId], references: [id])
+
+  @@map("reviews")
+}
+
+model AIUsageLog {
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  operation     String
+  inputTokens   Int      @default(0) @map("input_tokens")
+  outputTokens  Int      @default(0) @map("output_tokens")
+  estimatedCost Float    @default(0) @map("estimated_cost")
+  createdAt     DateTime @default(now()) @map("created_at")
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@map("ai_usage_logs")
+}

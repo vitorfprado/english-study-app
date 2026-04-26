@@ -1,0 +1,13 @@
+.next
+node_modules
+dist
+coverage
+.env
+.env.local
+.env.production
+.terraform
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.log
+deploy/backups

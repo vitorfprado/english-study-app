@@ -1,0 +1,49 @@
+services:
+  app:
+    build:
+      context: ../app
+    container_name: english-study-app
+    env_file:
+      - ../.env
+    depends_on:
+      - postgres
+    networks:
+      - study_net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: english-study-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - study_net
+
+  caddy:
+    image: caddy:2.9-alpine
+    container_name: english-study-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+    networks:
+      - study_net
+
+volumes:
+  pg_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  study_net:
+    driver: bridge
