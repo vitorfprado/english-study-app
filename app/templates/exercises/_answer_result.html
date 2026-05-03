@@ -1,5 +1,7 @@
 <div class="banner {% if answer.is_correct %}success{% else %}error{% endif %}">
-  {% if answer.is_correct %}Correto!{% else %}Incorreto.{% endif %}
+  {% if answer.is_correct %}Correto!{% else %}Precisa ajustar.{% endif %}
 </div>
-<p class="feedback">{{ answer.feedback }}</p>
-<p class="muted">Resposta esperada: <code>{{ exercise.correct_answer }}</code></p>
+{% if used_ai_correction %}
+<p class="muted small-tag">Correção com IA (feedback + sugestão curta da sua frase em inglês)</p>
+{% endif %}
+<div class="feedback-block"><p class="feedback">{{ answer.feedback }}</p></div>

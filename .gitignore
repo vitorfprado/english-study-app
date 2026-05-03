@@ -9,4 +9,5 @@ __pycache__/
 venv/
 *.log
 pg_data/
+uploads/
 deploy/backups

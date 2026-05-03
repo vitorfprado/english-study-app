@@ -8,6 +8,7 @@ from app.deps import templates
 from app.models.answer import Answer
 from app.models.enums import ExerciseType
 from app.models.exercise import Exercise
+from app.models.exercise_deck import ExerciseDeck
 from app.models.material import Material
 
 router = APIRouter(prefix="/exercises", tags=["exercises"])
@@ -21,8 +22,15 @@ def _validate_exercise_type(exercise_type: str) -> None:
 
 
 @router.get("", response_class=HTMLResponse)
-def list_exercises(request: Request, db: Session = Depends(get_session)) -> HTMLResponse:
-    stmt = select(Exercise).order_by(desc(Exercise.id))
+def list_exercises(request: Request, db: Session = Depends(get_session), deck_id: int | None = None) -> HTMLResponse:
+    if deck_id is not None:
+        deck = db.get(ExerciseDeck, deck_id)
+        if not deck:
+            raise HTTPException(404, "Deck não encontrado")
+        stmt = select(Exercise).where(Exercise.deck_id == deck_id).order_by(desc(Exercise.id))  # type: ignore[arg-type]
+    else:
+        stmt = select(Exercise).order_by(desc(Exercise.id))
+        deck = None
     rows = list(db.exec(stmt).all())
     material_ids = {r.material_id for r in rows if r.material_id}
     materials = {}
@@ -30,9 +38,13 @@ def list_exercises(request: Request, db: Session = Depends(get_session)) -> HTML
         m = db.get(Material, mid)
         if m:
             materials[mid] = m.title
+    page_title = "Todas as cartas"
+    if deck is not None:
+        page_title = deck.title[:100] + ("…" if len(deck.title) > 100 else "")
     return templates.TemplateResponse(
+        request,
         "exercises/list.html",
-        {"request": request, "exercises": rows, "material_titles": materials, "title": "Exercícios"},
+        {"exercises": rows, "material_titles": materials, "title": page_title, "deck": deck},
     )
 
 
@@ -41,9 +53,9 @@ def new_exercise_form(request: Request, db: Session = Depends(get_session), mate
     stmt = select(Material).order_by(desc(Material.id))
     materials = list(db.exec(stmt).all())
     return templates.TemplateResponse(
+        request,
         "exercises/form.html",
         {
-            "request": request,
             "materials": materials,
             "prefill_material_id": material_id,
             "title": "Novo exercício (manual)",
@@ -69,6 +81,7 @@ def create_exercise(
             raise HTTPException(400, "Material não encontrado")
     row = Exercise(
         material_id=mid,
+        deck_id=None,
         question=question.strip(),
         exercise_type=exercise_type,
         correct_answer=correct_answer.strip(),
@@ -86,15 +99,17 @@ def exercise_detail(request: Request, exercise_id: int, db: Session = Depends(ge
     if not row:
         raise HTTPException(404, "Exercício não encontrado")
     material = db.get(Material, row.material_id) if row.material_id else None
+    deck = db.get(ExerciseDeck, row.deck_id) if row.deck_id else None
 
     stmt = select(Answer).where(Answer.exercise_id == exercise_id).order_by(desc(Answer.id))  # type: ignore[arg-type]
     answers = list(db.exec(stmt).all())
     return templates.TemplateResponse(
+        request,
         "exercises/detail.html",
         {
-            "request": request,
             "exercise": row,
             "material": material,
+            "deck": deck,
             "answers": answers,
             "title": f"Exercício #{row.id}",
         },

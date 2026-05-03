@@ -1,0 +1,29 @@
+<div class="study-step">
+  <p class="muted">Na fila: <strong>{{ remaining }}</strong> · {{ deck.title[:70] }}{% if deck.title|length > 70 %}…{% endif %}
+    <a class="btn small" href="/exercises?deck_id={{ deck.id }}" style="margin-left:0.5rem">Lista do deck</a>
+  </p>
+
+  <div class="panel">
+    <h2>Pergunta</h2>
+    <p class="question">{{ exercise.question }}</p>
+    <p><code>{{ exercise.exercise_type }}</code></p>
+  </div>
+
+  <section class="panel">
+    <h2>Sua resposta</h2>
+    <form class="stack-form"
+      hx-post="/study/runs/{{ run.id }}/answer"
+      hx-target="#study-card"
+      hx-swap="innerHTML"
+      hx-indicator="#study-answer-indicator"
+      hx-disabled-elt="find button[type='submit']">
+      <input type="hidden" name="exercise_id" value="{{ exercise.id }}" />
+      <label>Sua resposta<input name="user_answer" required autocomplete="off" /></label>
+      <button class="btn primary" type="submit">Enviar</button>
+    </form>
+    <div id="study-answer-indicator" class="htmx-indicator" aria-live="polite">
+      <span class="spinner" aria-hidden="true"></span>
+      <span>Corrigindo…</span>
+    </div>
+  </section>
+</div>

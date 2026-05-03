@@ -1,13 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 from sqlalchemy import Column, ForeignKey, Text
-from sqlmodel import Field, Relationship, SQLModel
-
-if TYPE_CHECKING:
-    from app.models.exercise import Exercise
+from sqlmodel import Field, SQLModel
 
 
 class Answer(SQLModel, table=True):
@@ -19,5 +16,3 @@ class Answer(SQLModel, table=True):
     is_correct: bool = Field(default=False)
     feedback: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
     created_at: datetime = Field(default_factory=datetime.utcnow)
-
-    exercise: Optional["Exercise"] = Relationship(back_populates="answers")

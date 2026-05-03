@@ -16,16 +16,18 @@ router = APIRouter(prefix="/study-sessions", tags=["study_sessions"])
 def list_study_sessions(request: Request, db: Session = Depends(get_session)) -> HTMLResponse:
     rows = study_service.list_sessions(db)
     return templates.TemplateResponse(
+        request,
         "study_sessions/list.html",
-        {"request": request, "sessions": rows, "title": "Sessões de estudo"},
+        {"sessions": rows, "title": "Sessões de estudo"},
     )
 
 
 @router.get("/new", response_class=HTMLResponse)
 def new_session_form(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
+        request,
         "study_sessions/form.html",
-        {"request": request, "title": "Nova sessão"},
+        {"title": "Nova sessão"},
     )
 
 

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ title }}</h1>
+  <div class="actions">
+    <a class="btn" href="/exercises?deck_id={{ deck.id }}">Ver cartas</a>
+  </div>
+</div>
+<div id="study-card">
+  {% include "study/_card_fragment.html" %}
+</div>
+{% endblock %}

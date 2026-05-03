@@ -1,9 +1,22 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="page-head">
-  <h1>Exercícios</h1>
-  <a class="btn primary" href="/exercises/new">Novo exercício (manual)</a>
+  <h1>{% if deck %}Cartas — {{ deck.title[:80] }}{% if deck.title|length > 80 %}…{% endif %}{% else %}Todas as cartas{% endif %}</h1>
+  <div class="actions">
+    <a class="btn" href="/decks">Meus decks</a>
+    {% if deck %}
+    <a class="btn primary" href="/study/decks/{{ deck.id }}/start">Estudar este deck</a>
+    <a class="btn" href="/exercises">Todas as cartas</a>
+    {% endif %}
+    <a class="btn" href="/exercises/new">Novo cartão (manual)</a>
+  </div>
 </div>
+{% if not deck %}
+<p class="muted">Para praticar em sessão, abra <a href="/decks">Decks</a> e use <strong>Estudar</strong>. Esta página lista cartões para conferência ou criação manual.</p>
+{% endif %}
+{% if deck %}
+<p class="muted">Filtrando {{ deck.exercise_count }} cartão(ões). Material: {% if deck.material_id %}<a href="/materials/{{ deck.material_id }}">#{{ deck.material_id }}</a>{% else %}—{% endif %}</p>
+{% endif %}
 {% if exercises %}
 <table class="table">
   <thead>
@@ -11,6 +24,7 @@
       <th>#</th>
       <th>Pergunta</th>
       <th>Tipo</th>
+      <th>Deck</th>
       <th>Material</th>
     </tr>
   </thead>
@@ -20,6 +34,7 @@
       <td><a href="/exercises/{{ e.id }}">{{ e.id }}</a></td>
       <td>{{ e.question[:120] }}{% if e.question|length > 120 %}…{% endif %}</td>
       <td><code>{{ e.exercise_type }}</code></td>
+      <td>{% if e.deck_id %}<a href="/exercises?deck_id={{ e.deck_id }}">{% if deck and deck.id == e.deck_id %}{{ deck.title[:28] }}{% if deck.title|length > 28 %}…{% endif %}{% else %}Abrir deck{% endif %}</a>{% else %}<span class="muted">—</span>{% endif %}</td>
       <td>
         {% if e.material_id %}
           <a href="/materials/{{ e.material_id }}">{{ material_titles.get(e.material_id, e.material_id) }}</a>
@@ -32,6 +47,6 @@
   </tbody>
 </table>
 {% else %}
-<p class="muted">Nenhum exercício. Gere um a partir de um <a href="/materials">material</a> ou crie <a href="/exercises/new">manualmente</a>.</p>
+<p class="muted">Nenhuma carta. Gere decks em <a href="/materials">Materiais</a> ou crie <a href="/exercises/new">manualmente</a>.</p>
 {% endif %}
 {% endblock %}

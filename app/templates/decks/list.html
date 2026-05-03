@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <h1>Meus decks</h1>
+  <div class="actions">
+    <a class="btn" href="/materials">Materiais</a>
+    <a class="btn primary" href="/materials/from-pdf">Importar PDF</a>
+  </div>
+</div>
+<p class="muted">Cada deck é um conjunto de exercícios gerado a partir de um material. Gere <strong>outro deck</strong> no mesmo PDF quantas vezes quiser pela página do material.</p>
+{% if decks %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Deck</th>
+      <th>Material</th>
+      <th>Cartas</th>
+      <th>Criado</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for d in decks %}
+    <tr>
+      <td><strong>{{ d.title[:100] }}</strong>{% if d.title|length > 100 %}…{% endif %}</td>
+      <td><a href="/materials/{{ d.material_id }}">{{ material_titles.get(d.material_id, d.material_id) }}</a></td>
+      <td>{{ d.exercise_count }}</td>
+      <td class="muted">{{ d.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+      <td class="actions deck-row-actions">
+        <a class="btn small primary" href="/study/decks/{{ d.id }}/start">Estudar</a>
+        <a class="btn small" href="/exercises?deck_id={{ d.id }}">Ver cartas</a>
+        <form method="post" action="/decks/{{ d.id }}/delete" class="deck-delete-form"
+          onsubmit="return confirm('Remover este deck e todas as cartas, respostas e sessões de estudo associadas?');">
+          <button type="submit" class="btn small danger">Remover</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="muted">Nenhum deck ainda. Vá em <a href="/materials">Materiais</a>, abra um texto ou PDF e use <strong>Gerar novo deck</strong>.</p>
+{% endif %}
+{% endblock %}

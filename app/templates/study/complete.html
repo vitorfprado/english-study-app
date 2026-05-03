@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ title }}</h1>
+</div>
+<div class="panel">
+  <p>Esta sessão já foi encerrada ou a fila estava vazia.</p>
+  <p>
+    <a class="btn primary" href="/study/decks/{{ deck.id }}/start">Nova sessão</a>
+    <a class="btn" href="/exercises?deck_id={{ deck.id }}">Exercícios do deck</a>
+  </p>
+</div>
+{% endblock %}

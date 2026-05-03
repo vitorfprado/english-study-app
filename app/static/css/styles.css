@@ -63,6 +63,14 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
 .table thead { background: var(--surface); }
 .table tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
 
+.deck-row-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+.deck-delete-form { margin: 0; display: inline; }
+
 .stack-form label { display: block; margin-bottom: 0.75rem; }
 .stack-form input, .stack-form textarea, .stack-form select {
   width: 100%; margin-top: 0.25rem; padding: 0.5rem;
@@ -97,7 +105,47 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
 .danger-zone { margin-top: 2rem; padding-top: 1rem; border-top: 1px dashed var(--border); }
 
 .htmx-result { margin-top: 0.75rem; }
+
+/* HTMX: elemento com hx-indicator recebe .htmx-request durante o pedido */
+.htmx-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.2s ease, max-height 0.25s ease;
+}
+.htmx-request.htmx-indicator {
+  opacity: 1;
+  max-height: 4rem;
+}
+@keyframes htmx-spin {
+  to { transform: rotate(360deg); }
+}
+.spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: htmx-spin 0.65s linear infinite;
+  flex-shrink: 0;
+}
+.btn.htmx-request {
+  opacity: 0.75;
+  cursor: wait;
+}
+
+.inline-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.75rem; margin-top: 0.5rem; }
+.inline-label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.9rem; }
+
+.small-tag { font-size: 0.8rem; margin: 0.25rem 0 0.5rem; }
 .feedback { margin-top: 0.35rem; }
+.feedback-block .feedback { white-space: pre-wrap; }
 .answer-list { padding-left: 1.1rem; }
 .answer-list li { margin-bottom: 0.65rem; }
 .answer-list li.ok { color: var(--ok); }

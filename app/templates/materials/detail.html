@@ -7,21 +7,66 @@
     <a class="btn" href="/exercises/new?material_id={{ material.id }}">Novo exercício manual</a>
   </div>
 </div>
-<p class="muted">Origem: <code>{{ material.source_type }}</code> · Nível: {{ material.difficulty_level }}</p>
+<p class="muted">Origem: <code>{{ material.source_type }}</code></p>
+{% if material.pdf_original_name %}
+<p class="muted">PDF: <code>{{ material.pdf_original_name }}</code></p>
+{% endif %}
 {% if material.description %}<p>{{ material.description }}</p>{% endif %}
 <pre class="content-block">{{ material.content }}</pre>
 
-<section class="panel">
-  <h2>Gerar exercício com IA (ou mock)</h2>
-  <p class="muted">Sem <code>AI_API_KEY</code> configurada, um exercício simples é criado a partir do texto.</p>
-  <button class="btn primary"
-    hx-post="/materials/{{ material.id }}/exercises/generate"
-    hx-target="#gen-result"
-    hx-swap="innerHTML">
-    Gerar exercício
-  </button>
-  <div id="gen-result" class="htmx-result"></div>
+<section class="panel" id="gerar-deck">
+  <h2>Gerar novo deck a partir deste material</h2>
+  <p class="muted">Cada envio cria um <strong>deck novo</strong> (outro conjunto de cartas), mesmo PDF ou texto. Use quantidade <strong>1</strong> para o menor deck. Depois abra <a href="/decks">Meus decks</a> e use <strong>Estudar</strong> para sessão contínua (repetição ao errar + SRS).</p>
+  <form class="inline-form"
+    hx-post="/materials/{{ material.id }}/decks/generate"
+    hx-target="#deck-result"
+    hx-swap="innerHTML"
+    hx-indicator="#deck-gen-indicator"
+    hx-disabled-elt="find button[type='submit']">
+    <label class="inline-label">Nome do deck
+      <input type="text" name="deck_title" maxlength="255" placeholder="Ex.: Revisão aula 12 - vocabulário" />
+    </label>
+    <label class="inline-label">Nível
+      <select name="difficulty_level" required>
+        {% for lvl in difficulty_levels %}
+        <option value="{{ lvl.value }}" {% if lvl.value == "intermediate" %}selected{% endif %}>{{ lvl.value }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="inline-label">Tipo
+      <select name="exercise_type" required>
+        <option value="mixed" selected>mixed (aleatório)</option>
+        {% for ex in exercise_types %}
+        <option value="{{ ex.value }}">{{ ex.value }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="inline-label">Quantidade
+      <input type="number" name="count" min="1" max="{{ max_deck_size }}" value="{{ default_deck_size }}" required style="width:5rem" />
+    </label>
+    <button class="btn primary" type="submit">Gerar deck</button>
+  </form>
+  <div id="deck-gen-indicator" class="htmx-indicator" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <span>Gerando deck… pode levar um minuto com a IA.</span>
+  </div>
+  <div id="deck-result" class="htmx-result"></div>
 </section>
+
+{% if decks %}
+<section class="panel">
+  <h2>Decks deste material</h2>
+  <p class="muted"><a href="/decks">Ver todos os decks</a> · cada geração acima cria um deck novo.</p>
+  <ul>
+    {% for d in decks %}
+    <li>
+      <a href="/exercises?deck_id={{ d.id }}">{{ d.title[:60] }}{% if d.title|length > 60 %}…{% endif %}</a> — {{ d.exercise_count }} cartões · {{ d.created_at.strftime("%Y-%m-%d %H:%M") }}
+      · <a href="/study/decks/{{ d.id }}/start">Estudar</a>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
 
 <form method="post" action="/materials/{{ material.id }}/delete" class="danger-zone" onsubmit="return confirm('Remover este material?');">
   <button class="btn danger" type="submit">Remover material</button>

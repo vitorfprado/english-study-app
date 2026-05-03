@@ -15,6 +15,15 @@ class Settings(BaseSettings):
     ai_api_key: str = ""
     ai_model: str = "gpt-4o-mini"
     ai_base_url: str = ""  # opcional, ex.: proxy OpenAI-compatible
+    # Se true e IA configurada, correção de respostas usa API (economia: max_tokens baixo no código)
+    use_ai_correction: bool = True
+
+    # Upload PDF (caminho relativo ao cwd do app, ex. dentro do container /app)
+    upload_dir: str = "uploads"
+    max_pdf_bytes: int = 15 * 1024 * 1024
+    max_extracted_chars: int = 200_000
+    default_deck_size: int = 8
+    max_deck_size: int = 20
 
 
 @lru_cache

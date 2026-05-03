@@ -4,6 +4,7 @@
 
 - FastAPI + SQLModel + PostgreSQL + Alembic  
 - Materiais, exercícios, respostas, sessões de estudo  
+- Importação de **PDF da aula** (texto), **deck** de exercícios (IA ou mock)  
 - Docker Compose; IA opcional com fallback local  
 
 ## Próximo

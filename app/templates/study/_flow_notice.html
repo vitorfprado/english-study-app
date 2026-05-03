@@ -1,0 +1,12 @@
+<div class="study-step">
+  <div class="panel muted">
+    <h2>{{ notice_title }}</h2>
+    <p>{{ notice_body }}</p>
+  </div>
+  <p>
+    <a class="btn primary" href="{{ primary_href }}">{{ primary_label }}</a>
+    {% if secondary_href is defined and secondary_href %}
+    <a class="btn" href="{{ secondary_href }}">{{ secondary_label or "Lista do deck" }}</a>
+    {% endif %}
+  </p>
+</div>

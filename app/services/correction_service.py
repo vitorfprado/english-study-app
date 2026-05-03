@@ -28,7 +28,12 @@ def evaluate_answer(user_answer: str, correct_answer: str, explanation: str | No
             "Correto (equivalente próximo). "
             + (explanation or "Compare com a resposta esperada para refinar."),
         )
-    msg = f"Incorreto. Esperado algo equivalente a: «{correct_answer}»."
+    msg = (
+        "Sua resposta ainda tem problemas de estrutura e escolha de palavras para esse enunciado. "
+        "Em inglês, mantenha uma ordem clara (sujeito + verbo + complemento) e use a forma verbal correta da expressão pedida."
+    )
     if explanation:
-        msg += f" {explanation}"
+        msg += f" Para corrigir, aplique esta regra: {explanation}"
+    else:
+        msg += " Para corrigir, reescreva em uma frase curta e natural, ajustando verbo, preposição e ordem das palavras."
     return CorrectionResult(False, msg)

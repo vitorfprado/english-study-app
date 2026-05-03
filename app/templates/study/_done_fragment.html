@@ -1,0 +1,22 @@
+<div class="study-step">
+  <div class="banner success">Sessão do deck concluída</div>
+  {% if last_feedback is defined and last_feedback %}
+  <p class="feedback">{{ last_feedback }}</p>
+  {% else %}
+  <p class="muted">A correção do último cartão ficou na tela anterior — aqui só o encerramento e os próximos passos.</p>
+  {% endif %}
+  {% if last_gabarito is defined and last_gabarito %}
+  <p class="muted">Referência: <code>{{ last_gabarito }}</code></p>
+  {% endif %}
+  {% if used_ai is defined and used_ai %}
+  <p class="muted small-tag">Última correção com IA</p>
+  {% endif %}
+  <p class="muted">Progresso e revisões foram atualizados (SRS). Quando quiser, inicie outra sessão com o mesmo deck ou outro material.</p>
+  <p>
+    <a class="btn primary" href="/study/decks/{{ deck.id }}/start">Estudar de novo</a>
+    <a class="btn" href="/exercises?deck_id={{ deck.id }}">Ver exercícios</a>
+    {% if deck.material_id %}
+    <a class="btn" href="/materials/{{ deck.material_id }}">Material</a>
+    {% endif %}
+  </p>
+</div>

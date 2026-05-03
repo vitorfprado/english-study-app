@@ -2,6 +2,23 @@
 
 from sqlmodel import SQLModel
 
-from app.models import Answer, Exercise, Material, StudySession  # noqa: F401
+from app.models import (  # noqa: F401
+    Answer,
+    DeckStudyRun,
+    Exercise,
+    ExerciseDeck,
+    ExerciseSrs,
+    Material,
+    StudySession,
+)
 
-__all__ = ["SQLModel", "Answer", "Exercise", "Material", "StudySession"]
+__all__ = [
+    "SQLModel",
+    "Answer",
+    "DeckStudyRun",
+    "Exercise",
+    "ExerciseDeck",
+    "ExerciseSrs",
+    "Material",
+    "StudySession",
+]

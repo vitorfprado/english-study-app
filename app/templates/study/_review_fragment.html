@@ -1,0 +1,52 @@
+<div class="study-step">
+  <p class="muted">
+    Correção ·
+    {% if remaining %}
+    Faltam <strong>{{ remaining }}</strong> na fila
+    {% else %}
+    <strong>Último cartão</strong> desta sessão
+    {% endif %}
+    · {{ deck.title[:70] }}{% if deck.title|length > 70 %}…{% endif %}
+  </p>
+
+  <div class="panel">
+    <h2>Pergunta que você respondeu</h2>
+    <p class="question">{{ reviewed_question }}</p>
+    <p><code>{{ reviewed_type }}</code></p>
+    <p class="muted">Sua resposta: <strong>«{{ submitted_answer }}»</strong></p>
+  </div>
+
+  <div class="banner {% if was_correct %}success{% else %}error{% endif %}">
+    {% if was_correct %}Correto!{% else %}Precisa revisar.{% endif %}
+  </div>
+  {% if used_ai %}
+  <p class="muted small-tag">Correção com IA (feedback + sugestão curta da sua frase em inglês)</p>
+  {% endif %}
+  <div class="panel feedback-block">
+    <h2>Explicação</h2>
+    <p class="feedback">{{ feedback }}</p>
+  </div>
+
+  <p>
+    {% if deck_complete %}
+    <button type="button" class="btn primary"
+      hx-get="/study/runs/{{ run.id }}/session-complete-panel"
+      hx-target="#study-card"
+      hx-swap="innerHTML"
+      hx-indicator="#study-flow-indicator"
+      hx-disabled-elt="this">Concluir sessão</button>
+    {% else %}
+    <button type="button" class="btn primary"
+      hx-get="/study/runs/{{ run.id }}/current-card"
+      hx-target="#study-card"
+      hx-swap="innerHTML"
+      hx-indicator="#study-flow-indicator"
+      hx-disabled-elt="this">Continuar para o próximo</button>
+    {% endif %}
+    <a class="btn" href="/exercises?deck_id={{ deck.id }}">Lista do deck</a>
+  </p>
+  <div id="study-flow-indicator" class="htmx-indicator" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <span>Carregando…</span>
+  </div>
+</div>
