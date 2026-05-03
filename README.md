@@ -57,6 +57,26 @@ Na raiz do projeto:
 docker compose up --build -d
 ```
 
+### Script de inicialização (Compose + migrations)
+
+Na raiz do repositório, em um terminal:
+
+**Linux / macOS**
+
+```bash
+bash scripts/dev-up.sh
+```
+
+(opcional: `chmod +x scripts/dev-up.sh` e então `./scripts/dev-up.sh`)
+
+**Windows (PowerShell)**
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\dev-up.ps1
+```
+
+O script copia `.env.example` → `.env` se não existir, sobe `docker compose up -d --build` e roda `alembic upgrade head` no container `app` (com retentativas).
+
 ## Migrations (Alembic)
 
 Após o banco estar saudável, aplique as migrations **dentro do container da app**:
