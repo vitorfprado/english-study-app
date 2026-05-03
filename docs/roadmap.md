@@ -1,27 +1,15 @@
 # Roadmap
 
-## Fase 1
-- Next.js + Prisma + PostgreSQL
-- CRUD de decks e cards
-- Revisao simples sem IA
+## Feito (MVP local)
 
-## Fase 2
-- Geracao de cards com IA
-- Correcao com IA para respostas duvidosas
-- Validacao de JSON estruturado
+- FastAPI + SQLModel + PostgreSQL + Alembic  
+- Materiais, exercícios, respostas, sessões de estudo  
+- Docker Compose; IA opcional com fallback local  
 
-## Fase 3
-- Docker Compose
-- Caddy
-- Deploy em EC2
-- Terraform basico
+## Próximo
 
-## Fase 4
-- Backup para S3
-- Restore simplificado
-- Cron de backup
-
-## Fase 5
-- Pipeline CI/CD
-- Build e push de imagem
-- Deploy automatico via SSH
+- Revisão espaçada e flashcards  
+- Upload de arquivos e anexos  
+- Métricas de progresso  
+- Autenticação (se sair do uso só local)  
+- CI/CD e nuvem (quando fizer sentido)  

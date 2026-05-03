@@ -1,152 +1,157 @@
 # English Study App
 
-Aplicacao pessoal para estudar ingles com repeticao espacada simples e suporte de IA para geracao de cards e correcao de respostas.
+MVP pessoal para estudar inglês com **materiais**, **exercícios**, **respostas com feedback** e **sessões de estudo**. Tudo roda **100% local** com **Docker Compose** (FastAPI + PostgreSQL + Jinja2 + HTMX).
+
+Não há Terraform, Ansible, Kubernetes, CI/CD nem autenticação neste estágio.
 
 ## Objetivo
 
-Entregar um MVP simples, barato e facil de evoluir:
-- criar decks;
-- gerar cards com IA;
-- revisar traducoes;
-- corrigir respostas com validacao local + IA quando necessario;
-- salvar historico e proxima revisao.
+- Cadastrar textos, resumos e materiais em inglês.
+- Criar exercícios manualmente ou com auxílio de IA (com **fallback mock** quando não houver chave de API).
+- Responder exercícios e ver correção e explicação curta.
+- Registrar sessões de estudo (início/fim).
 
-## Arquitetura
+## Stack
 
-Internet -> EC2 publica -> Caddy -> Next.js + Prisma -> PostgreSQL (container interno)
+- Python 3.12, FastAPI, Uvicorn  
+- PostgreSQL 16  
+- SQLModel, Alembic  
+- Jinja2, HTMX, CSS simples  
+- Integração opcional com API de IA (`openai` ou `anthropic`) via variáveis de ambiente  
 
-Detalhes em `docs/architecture.md`.
+## Pré-requisitos
 
-## Estrutura
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (ou Docker Engine + plugin Compose)
 
-- `app`: aplicacao Next.js fullstack.
-- `deploy`: `docker-compose.yml`, `Caddyfile`, scripts de backup/restore.
-- `infra`: Terraform para AWS (VPC, SG, EC2, IAM, S3).
-- `docs`: arquitetura e roadmap.
+## Configuração do `.env`
 
-## Variaveis de ambiente
+Na raiz do repositório:
 
-Crie um arquivo `.env` na raiz a partir do `.env.example`.
-
-Linux/macOS:
+**Linux / macOS**
 
 ```bash
 cp .env.example .env
 ```
 
-PowerShell:
+**Windows (PowerShell)**
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-Preencha principalmente:
-- `DATABASE_URL`
-- `CLAUDE_API_KEY`
-- `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
-- `AWS_REGION`, `S3_BACKUP_BUCKET`
+Ajuste principalmente:
 
-## Rodando localmente (100% em container)
+| Variável | Descrição |
+|----------|-----------|
+| `DATABASE_URL` | No Compose, use o host **`db`** (nome do serviço), ex.: `postgresql://postgres:postgres@db:5432/english_study` |
+| `POSTGRES_*` | Devem ser coerentes com o usuário/senha na URL |
+| `AI_API_KEY` / `AI_PROVIDER` | Opcionais; vazios = gerador local (mock) |
+| `AI_PROVIDER` | `openai` ou `anthropic` quando usar IA real |
+| `AI_MODEL` | Ex.: `gpt-4o-mini` ou `claude-3-5-haiku-20241022` |
 
-> Fluxo recomendado para testes: sem Node instalado localmente.
+## Subir com Docker Compose
 
-1. Instale apenas Docker Desktop (ou Docker Engine + Compose plugin).
-2. Crie o `.env` na raiz do projeto.
-3. Garanta que `DATABASE_URL` use o host `postgres` (servico do Compose), por exemplo:
-
-```env
-DATABASE_URL=postgresql://postgres:postgres@postgres:5432/english_study
-```
-
-4. Suba os containers:
+Na raiz do projeto:
 
 ```bash
-docker compose -f deploy/docker-compose.yml up --build -d
+docker compose up --build -d
 ```
 
-5. Execute as migracoes dentro do container da aplicacao:
+## Migrations (Alembic)
+
+Após o banco estar saudável, aplique as migrations **dentro do container da app**:
 
 ```bash
-docker exec -it english-study-app npx prisma migrate deploy
+docker compose exec app alembic upgrade head
 ```
 
-6. (Opcional, primeira vez) Se ainda nao houver migration criada no projeto:
+### Criar uma nova migration (após alterar modelos)
 
 ```bash
-docker exec -it english-study-app npx prisma migrate dev --name init
+docker compose exec app alembic revision --autogenerate -m "descricao_curta"
+docker compose exec app alembic upgrade head
 ```
 
-7. Acesse localmente:
+Revise o arquivo gerado em `alembic/versions/` antes de commitar.
 
-- App: `http://localhost`
-- Se quiser bypass do proxy: `http://localhost:3000` (ajustando expose/port no compose)
+## Acessar a aplicação
 
-### Comandos uteis de teste local
+- **App:** [http://localhost:8000](http://localhost:8000)
+
+## Parar os containers
 
 ```bash
-# logs
-docker compose -f deploy/docker-compose.yml logs -f
-
-# parar containers
-docker compose -f deploy/docker-compose.yml down
-
-# parar e remover volumes (limpar banco local)
-docker compose -f deploy/docker-compose.yml down -v
+docker compose down
 ```
 
-## Deploy na EC2
-
-1. Provisione infraestrutura via Terraform em `infra/`.
-2. Conecte na EC2 via SSH.
-3. Clone o repositorio.
-4. Crie `.env` com valores de producao.
-5. Rode `docker compose -f deploy/docker-compose.yml up --build -d`.
-
-## Terraform (infra basica)
-
-Dentro de `infra/`:
+## Limpar volumes locais (apaga dados do PostgreSQL)
 
 ```bash
-terraform init
-terraform plan \
-  -var="ami_id=ami-xxxxxxxx" \
-  -var="key_name=sua-chave" \
-  -var="allowed_ssh_cidr=SEU_IP/32"
-terraform apply \
-  -var="ami_id=ami-xxxxxxxx" \
-  -var="key_name=sua-chave" \
-  -var="allowed_ssh_cidr=SEU_IP/32"
+docker compose down -v
 ```
 
-## Backup e restore
+## Estrutura de pastas
 
-Backup:
+```text
+english-study-app/
+├── app/
+│   ├── main.py
+│   ├── deps.py
+│   ├── api/routes/       # Rotas HTTP (HTML / HTMX)
+│   ├── core/             # Config, logging
+│   ├── db/               # Engine, sessão, base para Alembic
+│   ├── models/           # Entidades SQLModel
+│   ├── schemas/          # Validação Pydantic (form/API)
+│   ├── services/         # IA, geração de exercício, correção, sessões
+│   ├── templates/        # Jinja2
+│   └── static/           # CSS / JS
+├── alembic/
+├── alembic.ini
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+├── .env.example
+└── README.md
+```
+
+## Comandos úteis
 
 ```bash
-cd deploy/scripts
-POSTGRES_USER=postgres POSTGRES_DB=english_study S3_BACKUP_BUCKET=seu-bucket ./backup-db.sh
+# Logs em tempo real
+docker compose logs -f app
+
+# Shell no container da app
+docker compose exec app bash
+
+# Rodar Alembic history
+docker compose exec app alembic history
 ```
 
-Restore (arquivo local ou S3):
+## Desenvolvimento sem Docker (opcional)
+
+Com Python 3.12+ e PostgreSQL local:
 
 ```bash
-cd deploy/scripts
-POSTGRES_USER=postgres POSTGRES_DB=english_study ./restore-db.sh ./backups/db-20260101-120000.sql.gz
+python -m venv .venv
+.venv\Scripts\activate   # Windows
+pip install -r requirements.txt
 ```
 
-## Decisoes arquiteturais
+Defina `DATABASE_URL` apontando para o Postgres local, depois:
 
-- Sem EKS/ECS/RDS/LB no MVP para reduzir custo.
-- Postgres em container privado no mesmo host da app.
-- Camada de IA isolada em `app/src/services/ai`.
-- Repeticao espacada inicial simples e extensivel.
+```bash
+alembic upgrade head
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
 
-## Cuidados de custo
+## Próximos passos possíveis
 
-- EC2 pequena (`t3.micro` ou equivalente elegivel).
-- Sem NAT Gateway, sem Load Balancer, sem CloudFront no MVP.
-- Chamadas de IA somente para geracao de cards e revisoes duvidosas.
+- Revisão espaçada e flashcards  
+- Upload de arquivos (PDF, áudio)  
+- Autenticação se deixar de ser só uso local  
+- Métricas de progresso e dashboards  
+- CI/CD e deploy em nuvem (quando você quiser)  
 
-## Roadmap
+## Licença
 
-Veja `docs/roadmap.md`.
+Uso pessoal; ajuste conforme sua necessidade.

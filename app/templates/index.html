@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{{ app_name }}{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>{{ app_name }}</h1>
+  <p class="lead">
+    Estude inglês com materiais, exercícios e sessões que você mesmo cadastra.
+    Integração com IA é opcional: sem chave de API, o app gera exercícios simples localmente.
+  </p>
+  <ul class="link-cards">
+    <li><a class="card-link" href="/materials">Materiais de estudo</a></li>
+    <li><a class="card-link" href="/exercises">Exercícios</a></li>
+    <li><a class="card-link" href="/study-sessions">Sessões de estudo</a></li>
+  </ul>
+</section>
+{% endblock %}

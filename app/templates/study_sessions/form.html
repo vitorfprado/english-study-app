@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ title }}</h1>
+<form method="post" action="/study-sessions" class="stack-form">
+  <label>Título da sessão<input name="title" required placeholder="Ex.: Vocabulário manhã" /></label>
+  <label>Notas<textarea name="notes" rows="4" placeholder="Opcional: o que você estudou"></textarea></label>
+  <div class="form-actions">
+    <button class="btn primary" type="submit">Iniciar registro</button>
+    <a class="btn" href="/study-sessions">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

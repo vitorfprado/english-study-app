@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ title }}</h1>
+<form method="post" action="/exercises" class="stack-form">
+  <label>Material (opcional)
+    <select name="material_id">
+      <option value="">—</option>
+      {% for m in materials %}
+      <option value="{{ m.id }}" {% if prefill_material_id == m.id %}selected{% endif %}>{{ m.title }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Pergunta<textarea name="question" required rows="4"></textarea></label>
+  <label>Tipo
+    <select name="exercise_type" required>
+      {% for t in exercise_types %}
+      <option value="{{ t.value }}">{{ t.value }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Resposta correta<input name="correct_answer" required /></label>
+  <label>Explicação (opcional)<textarea name="explanation" rows="3"></textarea></label>
+  <div class="form-actions">
+    <button class="btn primary" type="submit">Criar</button>
+    <a class="btn" href="/exercises">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

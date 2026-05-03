@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <h1>Materiais</h1>
+  <a class="btn primary" href="/materials/new">Novo material</a>
+</div>
+{% if materials %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Título</th>
+      <th>Origem</th>
+      <th>Nível</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for m in materials %}
+    <tr>
+      <td><a href="/materials/{{ m.id }}">{{ m.title }}</a></td>
+      <td><code>{{ m.source_type }}</code></td>
+      <td>{{ m.difficulty_level }}</td>
+      <td class="actions"><a class="btn small" href="/materials/{{ m.id }}/edit">Editar</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="muted">Nenhum material ainda. <a href="/materials/new">Criar o primeiro</a>.</p>
+{% endif %}
+{% endblock %}

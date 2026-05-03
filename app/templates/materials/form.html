@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ title }}</h1>
+<form method="post" action="{% if material %}/materials/{{ material.id }}{% else %}/materials{% endif %}" class="stack-form">
+  <label>Título<input name="title" required maxlength="255" value="{{ material.title if material else '' }}" /></label>
+  <label>Descrição<textarea name="description" rows="2">{{ material.description if material else '' }}</textarea></label>
+  <label>Conteúdo<textarea name="content" required rows="10">{{ material.content if material else '' }}</textarea></label>
+  <label>Tipo de origem
+    <select name="source_type" required>
+      {% for t in source_types %}
+      <option value="{{ t.value }}" {% if material and material.source_type == t.value %}selected{% endif %}>{{ t.value }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Nível
+    <select name="difficulty_level" required>
+      {% for d in difficulty_levels %}
+      <option value="{{ d.value }}" {% if material and material.difficulty_level == d.value %}selected{% endif %}>{{ d.value }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <div class="form-actions">
+    <button class="btn primary" type="submit">Salvar</button>
+    <a class="btn" href="/materials">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

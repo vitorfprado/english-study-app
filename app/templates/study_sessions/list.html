@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <h1>Sessões de estudo</h1>
+  <a class="btn primary" href="/study-sessions/new">Nova sessão</a>
+</div>
+{% if sessions %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Título</th>
+      <th>Início</th>
+      <th>Fim</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for s in sessions %}
+    <tr>
+      <td>{{ s.title }}</td>
+      <td>{% if s.started_at %}{{ s.started_at.strftime("%Y-%m-%d %H:%M") }}{% else %}—{% endif %}</td>
+      <td>{% if s.finished_at %}{{ s.finished_at.strftime("%Y-%m-%d %H:%M") }}{% else %}<span class="muted">em andamento</span>{% endif %}</td>
+      <td>
+        {% if not s.finished_at %}
+        <form method="post" action="/study-sessions/{{ s.id }}/finish" style="display:inline">
+          <button class="btn small" type="submit">Encerrar</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="muted">Nenhuma sessão. <a href="/study-sessions/new">Registrar uma</a>.</p>
+{% endif %}
+{% endblock %}

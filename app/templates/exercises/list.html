@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <h1>Exercícios</h1>
+  <a class="btn primary" href="/exercises/new">Novo exercício (manual)</a>
+</div>
+{% if exercises %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Pergunta</th>
+      <th>Tipo</th>
+      <th>Material</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for e in exercises %}
+    <tr>
+      <td><a href="/exercises/{{ e.id }}">{{ e.id }}</a></td>
+      <td>{{ e.question[:120] }}{% if e.question|length > 120 %}…{% endif %}</td>
+      <td><code>{{ e.exercise_type }}</code></td>
+      <td>
+        {% if e.material_id %}
+          <a href="/materials/{{ e.material_id }}">{{ material_titles.get(e.material_id, e.material_id) }}</a>
+        {% else %}
+          <span class="muted">—</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="muted">Nenhum exercício. Gere um a partir de um <a href="/materials">material</a> ou crie <a href="/exercises/new">manualmente</a>.</p>
+{% endif %}
+{% endblock %}

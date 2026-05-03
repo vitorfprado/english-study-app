@@ -1,0 +1,5 @@
+<div class="banner {% if answer.is_correct %}success{% else %}error{% endif %}">
+  {% if answer.is_correct %}Correto!{% else %}Incorreto.{% endif %}
+</div>
+<p class="feedback">{{ answer.feedback }}</p>
+<p class="muted">Resposta esperada: <code>{{ exercise.correct_answer }}</code></p>

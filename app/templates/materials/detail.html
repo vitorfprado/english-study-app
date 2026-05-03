@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ material.title }}</h1>
+  <div class="actions">
+    <a class="btn" href="/materials/{{ material.id }}/edit">Editar</a>
+    <a class="btn" href="/exercises/new?material_id={{ material.id }}">Novo exercício manual</a>
+  </div>
+</div>
+<p class="muted">Origem: <code>{{ material.source_type }}</code> · Nível: {{ material.difficulty_level }}</p>
+{% if material.description %}<p>{{ material.description }}</p>{% endif %}
+<pre class="content-block">{{ material.content }}</pre>
+
+<section class="panel">
+  <h2>Gerar exercício com IA (ou mock)</h2>
+  <p class="muted">Sem <code>AI_API_KEY</code> configurada, um exercício simples é criado a partir do texto.</p>
+  <button class="btn primary"
+    hx-post="/materials/{{ material.id }}/exercises/generate"
+    hx-target="#gen-result"
+    hx-swap="innerHTML">
+    Gerar exercício
+  </button>
+  <div id="gen-result" class="htmx-result"></div>
+</section>
+
+<form method="post" action="/materials/{{ material.id }}/delete" class="danger-zone" onsubmit="return confirm('Remover este material?');">
+  <button class="btn danger" type="submit">Remover material</button>
+</form>
+{% endblock %}

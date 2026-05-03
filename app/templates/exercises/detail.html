@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <h1>Exercício #{{ exercise.id }}</h1>
+  <a class="btn" href="/exercises">Lista</a>
+</div>
+<p><code>{{ exercise.exercise_type }}</code>
+  {% if material %}· Material: <a href="/materials/{{ material.id }}">{{ material.title }}</a>{% endif %}
+</p>
+<div class="panel">
+  <h2>Pergunta</h2>
+  <p class="question">{{ exercise.question }}</p>
+</div>
+
+<section class="panel">
+  <h2>Sua resposta</h2>
+  <form class="stack-form"
+    hx-post="/answers"
+    hx-target="#answer-result"
+    hx-swap="innerHTML">
+    <input type="hidden" name="exercise_id" value="{{ exercise.id }}" />
+    <label>Sua resposta<input name="user_answer" required autocomplete="off" /></label>
+    <button class="btn primary" type="submit">Enviar</button>
+  </form>
+  <div id="answer-result" class="htmx-result"></div>
+</section>
+
+{% if exercise.explanation %}
+<section class="panel muted">
+  <h2>Dica / explicação do exercício</h2>
+  <p>{{ exercise.explanation }}</p>
+</section>
+{% endif %}
+
+<section class="panel">
+  <h2>Histórico de respostas</h2>
+  {% if answers %}
+  <ul class="answer-list">
+    {% for a in answers %}
+    <li class="{% if a.is_correct %}ok{% else %}bad{% endif %}">
+      <strong>{{ a.created_at.strftime("%Y-%m-%d %H:%M") }}</strong> —
+      Você: «{{ a.user_answer }}»
+      {% if a.is_correct %}(correto){% else %}(incorreto){% endif %}
+      <br /><span class="feedback">{{ a.feedback }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">Ainda não há respostas.</p>
+  {% endif %}
+</section>
+{% endblock %}

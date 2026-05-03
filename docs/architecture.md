@@ -1,26 +1,9 @@
-# Arquitetura MVP
+# Arquitetura (MVP local)
 
-## Visao geral
+Fluxo atual:
 
-Internet -> EC2 publica -> Caddy -> Next.js -> PostgreSQL (container interno)
+```text
+Navegador → FastAPI (porta 8000) → Jinja2 + HTMX → Serviços → PostgreSQL (container `db`)
+```
 
-## Principios
-
-- Custo minimo: EC2 unica, sem servicos gerenciados pagos no inicio.
-- Simplicidade: Docker Compose para subir app + banco + proxy.
-- Evolucao: camadas separadas para IA, regras de revisao e infraestrutura.
-
-## Componentes
-
-- `app`: frontend + backend API em Next.js (App Router).
-- `postgres`: persistencia de decks, cards, revisoes e logs de uso de IA.
-- `caddy`: reverse proxy e HTTPS automatizado quando houver dominio.
-- `infra`: Terraform para VPC, subnet publica, SG, EC2, IAM e S3.
-
-## Fluxo de revisao
-
-1. Buscar card pendente (`next_review_at <= now`).
-2. Usuario responde em ingles.
-3. Validacao local simples (normalizacao + similaridade).
-4. Se duvida, chamar IA para decisao e explicacao.
-5. Salvar Review e atualizar proxima revisao do Card.
+Integração com IA é opcional: sem `AI_API_KEY`, o serviço de IA usa um gerador local baseado no texto do material.

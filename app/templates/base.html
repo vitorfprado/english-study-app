@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}{{ title or app_name or "English Study" }}{% endblock %}</title>
+  <link rel="stylesheet" href="{{ request.url_for('static', path='css/styles.css') }}" />
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="logo" href="/">{{ app_name }}</a>
+      <nav class="nav">
+        <a href="/materials">Materiais</a>
+        <a href="/exercises">Exercícios</a>
+        <a href="/study-sessions">Sessões</a>
+      </nav>
+    </div>
+  </header>
+  <main class="container main">
+    {% if request.query_params.get("msg") %}
+      <p class="banner success">{{ request.query_params.get("msg") }}</p>
+    {% endif %}
+    {% if request.query_params.get("err") %}
+      <p class="banner error">{{ request.query_params.get("err") }}</p>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="site-footer">
+    <div class="container muted">Uso local — MVP</div>
+  </footer>
+  <script src="{{ request.url_for('static', path='js/app.js') }}"></script>
+</body>
+</html>
