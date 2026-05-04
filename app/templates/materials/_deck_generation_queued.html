@@ -1,0 +1,13 @@
+<div class="deck-generation-feedback">
+  <p class="banner"><strong>Deck enfileirado.</strong> Serão gerados {{ count }} cartões em background.</p>
+  <p class="muted">Acompanhe o status aqui; a lista <strong>Decks deste material</strong> atualiza junto com cada verificação.</p>
+  <div
+    hx-get="/materials/{{ material.id }}/decks/{{ deck.id }}/status"
+    hx-trigger="load delay:50ms, every 1s"
+    hx-swap="outerHTML">
+    <p class="muted">Consultando status do deck…</p>
+  </div>
+</div>
+<div id="material-decks-list" hx-swap-oob="innerHTML">
+  {% include "materials/_material_decks_inner.html" %}
+</div>

@@ -1,0 +1,43 @@
+{% if deck.processing_status == "completed" %}
+<div class="deck-generation-feedback">
+  <p class="banner success"><strong>{{ deck.title }}</strong> criado com {{ deck.exercise_count }} cartões.</p>
+  <p>
+    <a class="btn primary" href="/study/decks/{{ deck.id }}/start">Estudar agora</a>
+    <a class="btn" href="/decks">Meus decks</a>
+    <a class="btn" href="/exercises?deck_id={{ deck.id }}">Ver cartas</a>
+  </p>
+</div>
+<div id="material-decks-list" hx-swap-oob="innerHTML">
+  {% include "materials/_material_decks_inner.html" %}
+</div>
+{% elif deck.processing_status == "failed" %}
+<div class="deck-generation-feedback">
+  <p class="banner danger">
+    <strong>Falha ao gerar o deck.</strong>
+    {% if deck.processing_error %}<br />{{ deck.processing_error }}{% endif %}
+  </p>
+</div>
+<div id="material-decks-list" hx-swap-oob="innerHTML">
+  {% include "materials/_material_decks_inner.html" %}
+</div>
+{% elif deck.processing_status == "processing" %}
+<div
+  hx-get="/materials/{{ material.id }}/decks/{{ deck.id }}/status"
+  hx-trigger="every 1s"
+  hx-swap="outerHTML">
+  <p class="banner"><strong>Gerando deck…</strong> isso pode levar até um minuto com a IA.</p>
+</div>
+<div id="material-decks-list" hx-swap-oob="innerHTML">
+  {% include "materials/_material_decks_inner.html" %}
+</div>
+{% else %}
+<div
+  hx-get="/materials/{{ material.id }}/decks/{{ deck.id }}/status"
+  hx-trigger="every 1s"
+  hx-swap="outerHTML">
+  <p class="banner"><strong>Deck na fila.</strong> aguardando worker de IA.</p>
+</div>
+<div id="material-decks-list" hx-swap-oob="innerHTML">
+  {% include "materials/_material_decks_inner.html" %}
+</div>
+{% endif %}

@@ -6,6 +6,8 @@ from typing import Optional
 from sqlalchemy import Column, String, Text
 from sqlmodel import Field, SQLModel
 
+from app.models.enums import ProcessingStatus
+
 
 class Material(SQLModel, table=True):
     __tablename__ = "material"
@@ -18,5 +20,10 @@ class Material(SQLModel, table=True):
     difficulty_level: str = Field(sa_column=Column(String(32), nullable=False))
     pdf_original_name: Optional[str] = Field(default=None, sa_column=Column(String(512), nullable=True))
     pdf_stored_path: Optional[str] = Field(default=None, sa_column=Column(String(512), nullable=True))
+    processing_status: str = Field(
+        default=ProcessingStatus.COMPLETED.value,
+        sa_column=Column(String(32), nullable=False, default=ProcessingStatus.COMPLETED.value),
+    )
+    processing_error: Optional[str] = Field(default=None, sa_column=Column(Text, nullable=True))
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

@@ -1,14 +1,85 @@
 services:
-  app:
-    image: ${DOCKERHUB_USERNAME:-vitorfprado}/english-study-app:${APP_VERSION:-latest}
-    pull_policy: always
-    container_name: english-study-app
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web
+    image: english-study-web:local
+    container_name: english-study-web
     env_file:
       - .env
     ports:
       - "8000:8000"
     volumes:
       - uploads_data:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - study_net
+
+  worker-pdf:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: worker-pdf
+    image: english-study-worker-pdf:local
+    container_name: english-study-worker-pdf
+    env_file:
+      - .env
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - study_net
+
+  worker-ai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: worker-ai
+    image: english-study-worker-ai:local
+    container_name: english-study-worker-ai
+    env_file:
+      - .env
+      - path: .env.ai
+        required: false
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - study_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: english-study-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - study_net
+
+  migrations:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web
+    image: english-study-migrations:local
+    container_name: english-study-migrations
+    profiles: ["tools"]
+    env_file:
+      - .env
+    command: alembic upgrade head
     depends_on:
       db:
         condition: service_healthy

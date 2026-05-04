@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(env_file=(".env", ".env.ai"), env_file_encoding="utf-8", extra="ignore")
 
     app_name: str = "English Study App"
     app_env: str = "development"
@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     max_extracted_chars: int = 200_000
     default_deck_size: int = 8
     max_deck_size: int = 20
+    redis_url: str = "redis://localhost:6379/0"
+    queue_pdf_name: str = "pdf"
+    queue_ai_name: str = "ai"
 
 
 @lru_cache

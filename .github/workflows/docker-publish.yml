@@ -11,12 +11,18 @@ on:
 permissions:
   contents: read
 
-env:
-  IMAGE_NAME: english-study-app
-
 jobs:
   docker:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: web
+            image_name: english-study-web
+          - target: worker-pdf
+            image_name: english-study-worker-pdf
+          - target: worker-ai
+            image_name: english-study-worker-ai
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -34,7 +40,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.image_name }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,prefix=sha-
@@ -48,6 +54,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
+          target: ${{ matrix.target }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

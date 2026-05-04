@@ -2,7 +2,7 @@
 {% block content %}
 <h1>{{ title }}</h1>
 <p class="muted">
-  Envie o PDF do resumo da aula. O texto é extraído no servidor (sem OCR de imagens neste MVP).
+  Envie o PDF do resumo da aula. O texto é extraído por worker assíncrono (sem OCR de imagens neste MVP).
   Depois, na página do material, você escolhe <strong>nome do deck</strong>, <strong>nível</strong>, <strong>tipo de exercício</strong> e quantidade.
 </p>
 <p class="muted">Tamanho máximo do arquivo: <strong>{{ max_pdf_mb }} MB</strong>.</p>

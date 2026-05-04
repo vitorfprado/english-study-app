@@ -104,7 +104,10 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
 }
 .danger-zone { margin-top: 2rem; padding-top: 1rem; border-top: 1px dashed var(--border); }
 
-.htmx-result { margin-top: 0.75rem; }
+.htmx-result { margin-top: 0.75rem; min-height: 2.5rem; }
+
+.deck-generation-feedback { margin-top: 0.75rem; }
+.deck-generation-feedback .banner { margin-bottom: 0.5rem; }
 
 /* HTMX: elemento com hx-indicator recebe .htmx-request durante o pedido */
 .htmx-indicator {

@@ -1,0 +1,17 @@
+{% if decks %}
+<ul>
+  {% for d in decks %}
+  <li>
+    <a href="/exercises?deck_id={{ d.id }}">{{ d.title[:60] }}{% if d.title|length > 60 %}…{% endif %}</a> — {{ d.exercise_count }} cartões · {{ d.created_at.strftime("%Y-%m-%d %H:%M") }}
+    · <a href="/study/decks/{{ d.id }}/start">Estudar</a>
+    {% if d.processing_status == "pending" or d.processing_status == "processing" %}
+    <span class="muted">· em processamento</span>
+    {% elif d.processing_status == "failed" %}
+    <span class="muted">· falhou</span>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="muted">Nenhum deck ainda. Gere um acima.</p>
+{% endif %}

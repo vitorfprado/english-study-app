@@ -1,0 +1,2 @@
+-r base.txt
+pypdf>=5.0.0

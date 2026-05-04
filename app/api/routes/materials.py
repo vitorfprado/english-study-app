@@ -5,19 +5,25 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy import desc
 from sqlmodel import Session, select
 
+from app.core.queue import enqueue_deck_generation_job, enqueue_pdf_job
 from app.db.database import get_session
 from app.deps import templates
 from app.core.config import get_settings
-from app.models.enums import DifficultyLevel, ExerciseType, SourceType
+from app.models.enums import DifficultyLevel, ExerciseType, ProcessingStatus, SourceType
 from app.models.exercise_deck import ExerciseDeck
 from app.models.material import Material
-from app.services import exercise_generator, pdf_service
+from app.services import pdf_service
 
 router = APIRouter(prefix="/materials", tags=["materials"])
 
 _SOURCE_VALUES = {e.value for e in SourceType}
 _DIFF_VALUES = {e.value for e in DifficultyLevel}
 _EX_TYPES = {e.value for e in ExerciseType}
+
+
+def _decks_for_material(db: Session, material_id: int, limit: int = 12) -> list[ExerciseDeck]:
+    stmt = select(ExerciseDeck).where(ExerciseDeck.material_id == material_id).order_by(desc(ExerciseDeck.id)).limit(limit)  # type: ignore[arg-type]
+    return list(db.exec(stmt).all())
 
 
 def _validate_types(source_type: str, difficulty_level: str) -> None:
@@ -80,19 +86,16 @@ async def create_material_from_pdf(
     data = await file.read()
     if len(data) > settings.max_pdf_bytes:
         raise HTTPException(413, f"PDF acima do limite de {settings.max_pdf_bytes // (1024 * 1024)} MB")
-    try:
-        text = pdf_service.extract_text_from_pdf_bytes(data)
-    except ValueError as e:
-        raise HTTPException(400, str(e)) from e
-
     row = Material(
         title=(title or "").strip() or pdf_service.safe_pdf_filename(file.filename).replace(".pdf", "").replace("_", " ")[:200],
         description=f"Importado do PDF: {file.filename}",
-        content=text,
+        content="",
         source_type=SourceType.CLASS_SUMMARY.value,
         difficulty_level=DifficultyLevel.INTERMEDIATE.value,
         pdf_original_name=file.filename[:500],
         pdf_stored_path=None,
+        processing_status=ProcessingStatus.PENDING.value,
+        processing_error=None,
     )
     db.add(row)
     db.commit()
@@ -104,8 +107,11 @@ async def create_material_from_pdf(
         db.commit()
         raise HTTPException(500, "Falha ao salvar o PDF no disco") from None
     row.pdf_stored_path = rel
+    row.processing_status = ProcessingStatus.PENDING.value
+    row.processing_error = None
     db.add(row)
     db.commit()
+    enqueue_pdf_job(row.id)
     return RedirectResponse(url=f"/materials/{row.id}?msg=pdf-importado", status_code=303)
 
 
@@ -138,8 +144,7 @@ def material_detail(request: Request, material_id: int, db: Session = Depends(ge
     row = db.get(Material, material_id)
     if not row:
         raise HTTPException(404, "Material não encontrado")
-    stmt = select(ExerciseDeck).where(ExerciseDeck.material_id == material_id).order_by(desc(ExerciseDeck.id)).limit(12)  # type: ignore[arg-type]
-    decks = list(db.exec(stmt).all())
+    decks = _decks_for_material(db, material_id)
     s = get_settings()
     return templates.TemplateResponse(
         request,
@@ -148,6 +153,10 @@ def material_detail(request: Request, material_id: int, db: Session = Depends(ge
             "material": row,
             "title": row.title,
             "decks": decks,
+            "processing_status_pending": {
+                ProcessingStatus.PENDING.value,
+                ProcessingStatus.PROCESSING.value,
+            },
             "default_deck_size": s.default_deck_size,
             "max_deck_size": s.max_deck_size,
             "difficulty_levels": list(DifficultyLevel),
@@ -210,27 +219,8 @@ def delete_material(material_id: int, db: Session = Depends(get_session)) -> Red
     return RedirectResponse(url="/materials", status_code=303)
 
 
-@router.post("/{material_id}/exercises/generate")
-async def generate_exercise_for_material(
-    request: Request,
-    material_id: int,
-    db: Session = Depends(get_session),
-) -> Response:
-    row = db.get(Material, material_id)
-    if not row:
-        raise HTTPException(404, "Material não encontrado")
-    deck = await exercise_generator.create_deck_from_material(db, row, 1)
-    if request.headers.get("hx-request"):
-        return templates.TemplateResponse(
-            request,
-            "materials/_deck_generated.html",
-            {"deck": deck, "material": row},
-        )
-    return RedirectResponse(url=f"/study/decks/{deck.id}/start", status_code=303)
-
-
 @router.post("/{material_id}/decks/generate")
-async def generate_deck_for_material(
+def generate_deck_for_material(
     request: Request,
     material_id: int,
     db: Session = Depends(get_session),
@@ -242,24 +232,91 @@ async def generate_deck_for_material(
     row = db.get(Material, material_id)
     if not row:
         raise HTTPException(404, "Material não encontrado")
+    if row.processing_status != ProcessingStatus.COMPLETED.value:
+        raise HTTPException(409, "Aguarde o processamento do PDF concluir antes de gerar deck")
     s = get_settings()
     count = max(1, min(int(count), s.max_deck_size))
     if difficulty_level not in _DIFF_VALUES:
         raise HTTPException(400, f"difficulty_level inválido: {difficulty_level}")
     if exercise_type != "mixed" and exercise_type not in _EX_TYPES:
         raise HTTPException(400, f"exercise_type inválido: {exercise_type}")
-    deck = await exercise_generator.create_deck_from_material(
-        db,
-        row,
-        count,
-        deck_title=deck_title,
-        difficulty_level=difficulty_level,
-        exercise_type=exercise_type,
+    resolved_title = (deck_title or "").strip()
+    if not resolved_title:
+        resolved_title = f"Deck · {row.title}"
+    deck = ExerciseDeck(
+        material_id=row.id,
+        title=resolved_title[:500],
+        exercise_count=count,
+        processing_status=ProcessingStatus.PENDING.value,
+        processing_error=None,
     )
+    db.add(deck)
+    db.commit()
+    db.refresh(deck)
+    enqueue_deck_generation_job(deck.id, difficulty_level, exercise_type)
+
     if request.headers.get("hx-request"):
+        decks = _decks_for_material(db, row.id)
         return templates.TemplateResponse(
             request,
-            "materials/_deck_generated.html",
-            {"deck": deck, "material": row},
+            "materials/_deck_generation_queued.html",
+            {"deck": deck, "material": row, "count": count, "decks": decks},
         )
-    return RedirectResponse(url=f"/exercises?deck_id={deck.id}", status_code=303)
+    return RedirectResponse(url=f"/materials/{row.id}?msg=deck-em-fila", status_code=303)
+
+
+@router.get("/{material_id}/processing-status", response_class=HTMLResponse)
+def material_processing_status(
+    request: Request,
+    material_id: int,
+    db: Session = Depends(get_session),
+) -> HTMLResponse:
+    row = db.get(Material, material_id)
+    if not row:
+        raise HTTPException(404, "Material não encontrado")
+    return templates.TemplateResponse(
+        request,
+        "materials/_processing_status.html",
+        {"material": row, "processing_status_pending": {ProcessingStatus.PENDING.value, ProcessingStatus.PROCESSING.value}},
+    )
+
+
+@router.get("/{material_id}/decks-list", response_class=HTMLResponse)
+def material_decks_list_partial(
+    request: Request,
+    material_id: int,
+    db: Session = Depends(get_session),
+) -> HTMLResponse:
+    row = db.get(Material, material_id)
+    if not row:
+        raise HTTPException(404, "Material não encontrado")
+    decks = _decks_for_material(db, material_id)
+    return templates.TemplateResponse(
+        request,
+        "materials/_material_decks_inner.html",
+        {"decks": decks},
+    )
+
+
+@router.get("/{material_id}/decks/{deck_id}/status", response_class=HTMLResponse)
+def deck_generation_status(
+    request: Request,
+    material_id: int,
+    deck_id: int,
+    db: Session = Depends(get_session),
+) -> HTMLResponse:
+    row = db.get(Material, material_id)
+    deck = db.get(ExerciseDeck, deck_id)
+    if not row or not deck or deck.material_id != material_id:
+        raise HTTPException(404, "Deck não encontrado")
+    decks = _decks_for_material(db, material_id)
+    return templates.TemplateResponse(
+        request,
+        "materials/_deck_generation_status.html",
+        {
+            "deck": deck,
+            "material": row,
+            "decks": decks,
+            "processing_status_pending": {ProcessingStatus.PENDING.value, ProcessingStatus.PROCESSING.value},
+        },
+    )

@@ -12,13 +12,18 @@ if [[ ! -f .env ]]; then
   cp .env.example .env
 fi
 
-echo "[dev-up] docker compose up -d"
-docker compose up -d
+echo "[dev-up] docker compose up --build -d --remove-orphans"
+if ! docker compose up --build -d --remove-orphans; then
+  echo "[dev-up] erro: docker compose falhou."
+  echo "[dev-up] dica: se a porta 8000 estiver em uso, rode: docker compose down --remove-orphans"
+  echo "[dev-up] dica: depois liste containers: docker ps -a"
+  exit 1
+fi
 
-echo "[dev-up] aguardando Alembic (retries se o container ainda estiver iniciando)..."
+echo "[dev-up] aguardando Alembic (retries se o container web ainda estiver iniciando)..."
 ok=0
 for i in 1 2 3 4 5 6 7 8 9 10; do
-  if docker compose exec -T app alembic upgrade head; then
+  if docker compose exec -T web alembic upgrade head; then
     ok=1
     break
   fi
@@ -27,7 +32,7 @@ for i in 1 2 3 4 5 6 7 8 9 10; do
 done
 
 if [[ "$ok" -ne 1 ]]; then
-  echo "[dev-up] erro: alembic upgrade head não concluiu. Veja: docker compose logs app"
+  echo "[dev-up] erro: alembic upgrade head não concluiu. Veja: docker compose logs web"
   exit 1
 fi
 

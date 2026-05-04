@@ -22,3 +22,10 @@ class ExerciseType(str, Enum):
     WRITING = "writing"
     GRAMMAR = "grammar"
     VOCABULARY = "vocabulary"
+
+
+class ProcessingStatus(str, Enum):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"

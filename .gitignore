@@ -1,4 +1,5 @@
 .env
+.env.ai
 __pycache__/
 *.py[cod]
 *.pyo

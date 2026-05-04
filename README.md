@@ -1,6 +1,6 @@
 # English Study App
 
-MVP pessoal para estudar inglês com **materiais**, **exercícios**, **respostas com feedback** e **sessões de estudo**. Roda com **Docker Compose** (FastAPI + PostgreSQL + Jinja2 + HTMX), com imagem publicada no Docker Hub via CI.
+MVP pessoal para estudar inglês com **materiais**, **exercícios**, **respostas com feedback** e **sessões de estudo**. Roda localmente com **Docker Compose** em arquitetura modular (`web` + workers + Redis + PostgreSQL), mantendo FastAPI + Jinja2 + HTMX.
 
 Não há Terraform, Ansible, Kubernetes nem autenticação neste estágio.
 
@@ -48,39 +48,50 @@ Ajuste principalmente:
 |----------|-----------|
 | `DATABASE_URL` | No Compose, use o host **`db`** (nome do serviço), ex.: `postgresql://postgres:postgres@db:5432/english_study` |
 | `POSTGRES_*` | Devem ser coerentes com o usuário/senha na URL |
-| `DOCKERHUB_USERNAME` | Seu usuário no Docker Hub (usado pelo `docker-compose.yml`) |
-| `APP_VERSION` | Tag da imagem da app (ex.: `latest`, `build-42`, `v0.0.1`) |
+| `REDIS_URL` | URL de conexão do Redis (padrão local: `redis://redis:6379/0`) |
+| `QUEUE_PDF_NAME` / `QUEUE_AI_NAME` | Nomes das filas RQ para worker de PDF e IA |
 | `AI_API_KEY` / `AI_PROVIDER` | Opcionais; vazios = gerador local (mock) e **correção de respostas só por regras locais** |
 | `USE_AI_CORRECTION` | `true` (padrão): com IA configurada, a correção de cada resposta usa a API com prompt enxuto (`max_tokens` ~280) |
 | `AI_PROVIDER` | `openai` ou `anthropic` quando usar IA real |
 | `AI_MODEL` | Ex.: `gpt-4o-mini` ou `claude-3-5-haiku-20241022` |
 | `UPLOAD_DIR`, `MAX_PDF_BYTES`, `MAX_EXTRACTED_CHARS`, `DEFAULT_DECK_SIZE`, `MAX_DECK_SIZE` | Opcionais; veja `app/core/config.py` |
 
-PDFs só com **texto selecionável** funcionam bem; PDF escaneado (imagem) exigiria OCR (não incluído neste MVP). Os arquivos ficam em `uploads/` e o `docker-compose.yml` já persiste esse diretório no volume nomeado `uploads_data`.
+PDFs só com **texto selecionável** funcionam bem; PDF escaneado (imagem) exigiria OCR (não incluído neste MVP). Os arquivos ficam em `uploads/` e o `docker-compose.yml` persiste esse diretório no volume `uploads_data`.
 
-## CI de imagem Docker (Docker Hub)
+### Variáveis opcionais da IA em arquivo separado
 
-O workflow em `.github/workflows/docker-publish.yml` faz build e push da imagem da app para o Docker Hub quando houver push na branch `main` ou em tags `v*.*.*`.
+Para isolar segredo no worker de IA, você pode usar:
 
-Configure os secrets do repositório no GitHub:
+- `.env` para configuração geral
+- `.env.ai` para `AI_API_KEY` e ajustes específicos de IA
 
-- `DOCKERHUB_USERNAME`
-- `DOCKERHUB_TOKEN` (token de acesso do Docker Hub)
+O `worker-ai` no Compose carrega ambos (`.env` + `.env.ai`).
 
-Tags geradas automaticamente por build:
+## Arquitetura local (Compose)
 
-- `latest` (somente na branch padrão)
-- `sha-<commit>`
-- `build-<run_number>`
-- `<YYYYMMDD>-<run_number>`
-- `vX.Y.Z` e `X.Y` (quando o push for de tag semântica como `v0.0.1`)
+Serviços:
+
+- `web`: FastAPI + Jinja2/HTMX (request HTTP, upload, enqueue de jobs)
+- `worker-pdf`: consome fila `pdf`, extrai texto do PDF e atualiza material
+- `worker-ai`: consome fila `ai`, gera decks/exercícios/correções com IA ou mock
+- `redis`: broker/fila para jobs RQ
+- `db`: PostgreSQL com volume persistente
+
+Fluxo assíncrono:
+
+1. Upload do PDF cria material com `pending`.
+2. `web` enfileira job de PDF no Redis.
+3. `worker-pdf` processa, salva conteúdo e marca `completed`/`failed`.
+4. Geração de deck cria deck `pending`.
+5. `web` enfileira job de IA.
+6. `worker-ai` gera cartões e marca `completed`/`failed`.
 
 ## Subir com Docker Compose
 
 Na raiz do projeto:
 
 ```bash
-docker compose up -d
+docker compose up --build -d
 ```
 
 ### Script de inicialização (Compose + migrations)
@@ -101,23 +112,29 @@ bash scripts/dev-up.sh
 powershell -ExecutionPolicy Bypass -File scripts\dev-up.ps1
 ```
 
-O script copia `.env.example` → `.env` se não existir, sobe `docker compose up -d` e roda `alembic upgrade head` no container `app` (com retentativas).
+O script copia `.env.example` → `.env` se não existir, sobe `docker compose up --build -d` e roda `alembic upgrade head` no container `web` (com retentativas).
 
 No **Windows PowerShell 5.1**, scripts `.ps1` em UTF-8 **sem BOM** com acentos podem falhar ao analisar (`TerminatorExpectedAtEndOfString`). O `dev-up.ps1` usa mensagens ASCII para evitar isso; no **PowerShell 7+** também funciona.
 
 ## Migrations (Alembic)
 
-Após o banco estar saudável, aplique as migrations **dentro do container da app**:
+Após o banco estar saudável, aplique as migrations **dentro do container web**:
 
 ```bash
-docker compose exec app alembic upgrade head
+docker compose exec web alembic upgrade head
+```
+
+Alternativa (serviço opcional dedicado):
+
+```bash
+docker compose --profile tools run --rm migrations
 ```
 
 ### Criar uma nova migration (após alterar modelos)
 
 ```bash
-docker compose exec app alembic revision --autogenerate -m "descricao_curta"
-docker compose exec app alembic upgrade head
+docker compose exec web alembic revision --autogenerate -m "descricao_curta"
+docker compose exec web alembic upgrade head
 ```
 
 Revise o arquivo gerado em `alembic/versions/` antes de commitar.
@@ -167,13 +184,15 @@ english-study-app/
 
 ```bash
 # Logs em tempo real
-docker compose logs -f app
+docker compose logs -f web
+docker compose logs -f worker-pdf
+docker compose logs -f worker-ai
 
-# Shell no container da app
-docker compose exec app bash
+# Shell no container web
+docker compose exec web bash
 
 # Rodar Alembic history
-docker compose exec app alembic history
+docker compose exec web alembic history
 ```
 
 ## Desenvolvimento sem Docker (opcional)

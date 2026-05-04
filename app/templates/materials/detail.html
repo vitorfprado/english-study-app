@@ -12,6 +12,11 @@
 <p class="muted">PDF: <code>{{ material.pdf_original_name }}</code></p>
 {% endif %}
 {% if material.description %}<p>{{ material.description }}</p>{% endif %}
+<div id="material-processing-status"
+     hx-get="/materials/{{ material.id }}/processing-status"
+     {% if material.processing_status in processing_status_pending %}hx-trigger="load, every 3s"{% else %}hx-trigger="load"{% endif %}
+     hx-swap="innerHTML">
+</div>
 <pre class="content-block">{{ material.content }}</pre>
 
 <section class="panel" id="gerar-deck">
@@ -44,29 +49,25 @@
     <label class="inline-label">Quantidade
       <input type="number" name="count" min="1" max="{{ max_deck_size }}" value="{{ default_deck_size }}" required style="width:5rem" />
     </label>
-    <button class="btn primary" type="submit">Gerar deck</button>
+    <button class="btn primary" type="submit" {% if material.processing_status != "completed" %}disabled{% endif %}>Gerar deck</button>
   </form>
+  {% if material.processing_status != "completed" %}
+  <p class="muted">A geração de deck é liberada quando o processamento do PDF estiver concluído.</p>
+  {% endif %}
+  <div id="deck-result" class="htmx-result" aria-live="polite" aria-atomic="true"></div>
   <div id="deck-gen-indicator" class="htmx-indicator" aria-live="polite">
     <span class="spinner" aria-hidden="true"></span>
     <span>Gerando deck… pode levar um minuto com a IA.</span>
   </div>
-  <div id="deck-result" class="htmx-result"></div>
 </section>
 
-{% if decks %}
-<section class="panel">
+<section class="panel" id="material-decks-panel">
   <h2>Decks deste material</h2>
-  <p class="muted"><a href="/decks">Ver todos os decks</a> · cada geração acima cria um deck novo.</p>
-  <ul>
-    {% for d in decks %}
-    <li>
-      <a href="/exercises?deck_id={{ d.id }}">{{ d.title[:60] }}{% if d.title|length > 60 %}…{% endif %}</a> — {{ d.exercise_count }} cartões · {{ d.created_at.strftime("%Y-%m-%d %H:%M") }}
-      · <a href="/study/decks/{{ d.id }}/start">Estudar</a>
-    </li>
-    {% endfor %}
-  </ul>
+  <p class="muted"><a href="/decks">Ver todos os decks</a> · cada geração acima cria um deck novo. A lista abaixo atualiza quando a geração terminar.</p>
+  <div id="material-decks-list">
+    {% include "materials/_material_decks_inner.html" %}
+  </div>
 </section>
-{% endif %}
 
 <form method="post" action="/materials/{{ material.id }}/delete" class="danger-zone" onsubmit="return confirm('Remover este material?');">
   <button class="btn danger" type="submit">Remover material</button>

@@ -1,0 +1,12 @@
+{% if material.processing_status == "completed" %}
+<p class="banner success"><strong>PDF processado com sucesso.</strong> Agora você já pode gerar decks.</p>
+{% elif material.processing_status == "failed" %}
+<p class="banner danger">
+  <strong>Falha ao processar PDF.</strong>
+  {% if material.processing_error %}<br />{{ material.processing_error }}{% endif %}
+</p>
+{% elif material.processing_status == "processing" %}
+<p class="banner"><strong>Processando PDF...</strong> aguarde alguns segundos.</p>
+{% else %}
+<p class="banner"><strong>PDF recebido.</strong> Job enfileirado para processamento.</p>
+{% endif %}
