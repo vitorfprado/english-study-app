@@ -1,6 +1,6 @@
 services:
   app:
-    image: ${DOCKERHUB_USERNAME:-seu-usuario}/english-study-app:${APP_VERSION:-latest}
+    image: ${DOCKERHUB_USERNAME:-vitorfprado}/english-study-app:${APP_VERSION:-latest}
     pull_policy: always
     container_name: english-study-app
     env_file:
