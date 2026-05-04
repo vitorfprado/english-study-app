@@ -12,8 +12,8 @@ if (-not (Test-Path (Join-Path $RepoRoot ".env"))) {
     Copy-Item (Join-Path $RepoRoot ".env.example") (Join-Path $RepoRoot ".env")
 }
 
-Write-Host '[dev-up] docker compose up -d --build'
-docker compose up -d --build
+Write-Host '[dev-up] docker compose up -d'
+docker compose up -d
 
 Write-Host '[dev-up] waiting for Alembic (retries if app container is still starting)...'
 $ok = $false

@@ -1,13 +1,14 @@
 services:
   app:
-    build: .
+    image: ${DOCKERHUB_USERNAME:-seu-usuario}/english-study-app:${APP_VERSION:-latest}
+    pull_policy: always
     container_name: english-study-app
     env_file:
       - .env
     ports:
       - "8000:8000"
     volumes:
-      - .:/app
+      - uploads_data:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -36,6 +37,7 @@ services:
 
 volumes:
   pg_data:
+  uploads_data:
 
 networks:
   study_net:

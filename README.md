@@ -1,8 +1,8 @@
 # English Study App
 
-MVP pessoal para estudar inglês com **materiais**, **exercícios**, **respostas com feedback** e **sessões de estudo**. Tudo roda **100% local** com **Docker Compose** (FastAPI + PostgreSQL + Jinja2 + HTMX).
+MVP pessoal para estudar inglês com **materiais**, **exercícios**, **respostas com feedback** e **sessões de estudo**. Roda com **Docker Compose** (FastAPI + PostgreSQL + Jinja2 + HTMX), com imagem publicada no Docker Hub via CI.
 
-Não há Terraform, Ansible, Kubernetes, CI/CD nem autenticação neste estágio.
+Não há Terraform, Ansible, Kubernetes nem autenticação neste estágio.
 
 ## Objetivo
 
@@ -48,20 +48,39 @@ Ajuste principalmente:
 |----------|-----------|
 | `DATABASE_URL` | No Compose, use o host **`db`** (nome do serviço), ex.: `postgresql://postgres:postgres@db:5432/english_study` |
 | `POSTGRES_*` | Devem ser coerentes com o usuário/senha na URL |
+| `DOCKERHUB_USERNAME` | Seu usuário no Docker Hub (usado pelo `docker-compose.yml`) |
+| `APP_VERSION` | Tag da imagem da app (ex.: `latest`, `build-42`, `v0.0.1`) |
 | `AI_API_KEY` / `AI_PROVIDER` | Opcionais; vazios = gerador local (mock) e **correção de respostas só por regras locais** |
 | `USE_AI_CORRECTION` | `true` (padrão): com IA configurada, a correção de cada resposta usa a API com prompt enxuto (`max_tokens` ~280) |
 | `AI_PROVIDER` | `openai` ou `anthropic` quando usar IA real |
 | `AI_MODEL` | Ex.: `gpt-4o-mini` ou `claude-3-5-haiku-20241022` |
 | `UPLOAD_DIR`, `MAX_PDF_BYTES`, `MAX_EXTRACTED_CHARS`, `DEFAULT_DECK_SIZE`, `MAX_DECK_SIZE` | Opcionais; veja `app/core/config.py` |
 
-PDFs só com **texto selecionável** funcionam bem; PDF escaneado (imagem) exigiria OCR (não incluído neste MVP). Os arquivos ficam em `uploads/` (ignorado no Git; com `docker compose` e volume `.:/app` persistem na pasta do projeto).
+PDFs só com **texto selecionável** funcionam bem; PDF escaneado (imagem) exigiria OCR (não incluído neste MVP). Os arquivos ficam em `uploads/` e o `docker-compose.yml` já persiste esse diretório no volume nomeado `uploads_data`.
+
+## CI de imagem Docker (Docker Hub)
+
+O workflow em `.github/workflows/docker-publish.yml` faz build e push da imagem da app para o Docker Hub quando houver push na branch `main` ou em tags `v*.*.*`.
+
+Configure os secrets do repositório no GitHub:
+
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN` (token de acesso do Docker Hub)
+
+Tags geradas automaticamente por build:
+
+- `latest` (somente na branch padrão)
+- `sha-<commit>`
+- `build-<run_number>`
+- `<YYYYMMDD>-<run_number>`
+- `vX.Y.Z` e `X.Y` (quando o push for de tag semântica como `v0.0.1`)
 
 ## Subir com Docker Compose
 
 Na raiz do projeto:
 
 ```bash
-docker compose up --build -d
+docker compose up -d
 ```
 
 ### Script de inicialização (Compose + migrations)
@@ -82,7 +101,7 @@ bash scripts/dev-up.sh
 powershell -ExecutionPolicy Bypass -File scripts\dev-up.ps1
 ```
 
-O script copia `.env.example` → `.env` se não existir, sobe `docker compose up -d --build` e roda `alembic upgrade head` no container `app` (com retentativas).
+O script copia `.env.example` → `.env` se não existir, sobe `docker compose up -d` e roda `alembic upgrade head` no container `app` (com retentativas).
 
 No **Windows PowerShell 5.1**, scripts `.ps1` em UTF-8 **sem BOM** com acentos podem falhar ao analisar (`TerminatorExpectedAtEndOfString`). O `dev-up.ps1` usa mensagens ASCII para evitar isso; no **PowerShell 7+** também funciona.
 

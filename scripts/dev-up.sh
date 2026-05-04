@@ -12,8 +12,8 @@ if [[ ! -f .env ]]; then
   cp .env.example .env
 fi
 
-echo "[dev-up] docker compose up -d --build"
-docker compose up -d --build
+echo "[dev-up] docker compose up -d"
+docker compose up -d
 
 echo "[dev-up] aguardando Alembic (retries se o container ainda estiver iniciando)..."
 ok=0
