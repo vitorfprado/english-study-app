@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     upload_dir: str = "uploads"
     max_pdf_bytes: int = 15 * 1024 * 1024
     max_extracted_chars: int = 200_000
+    min_extracted_chars: int = 80
+    ocr_languages: str = "eng+por"
     default_deck_size: int = 8
     max_deck_size: int = 20
 
