@@ -20,7 +20,8 @@ Não há Terraform, Ansible, Kubernetes nem autenticação neste estágio.
 - SQLModel, Alembic  
 - Jinja2, HTMX, CSS simples  
 - Integração opcional com API de IA (`openai` ou `anthropic`) via variáveis de ambiente  
-- `pypdf` para leitura de PDF  
+- `pypdf` para extração nativa de PDF
+- `PyMuPDF` + `pytesseract` + `Pillow` para OCR local de PDFs escaneados/imagem
 
 ## Pré-requisitos
 
@@ -54,9 +55,17 @@ Ajuste principalmente:
 | `USE_AI_CORRECTION` | `true` (padrão): com IA configurada, a correção de cada resposta usa a API com prompt enxuto (`max_tokens` ~280) |
 | `AI_PROVIDER` | `openai` ou `anthropic` quando usar IA real |
 | `AI_MODEL` | Ex.: `gpt-4o-mini` ou `claude-3-5-haiku-20241022` |
-| `UPLOAD_DIR`, `MAX_PDF_BYTES`, `MAX_EXTRACTED_CHARS`, `DEFAULT_DECK_SIZE`, `MAX_DECK_SIZE` | Opcionais; veja `app/core/config.py` |
+| `UPLOAD_DIR`, `MAX_PDF_BYTES`, `MAX_EXTRACTED_CHARS`, `MIN_EXTRACTED_CHARS`, `OCR_LANGUAGES`, `DEFAULT_DECK_SIZE`, `MAX_DECK_SIZE` | Opcionais; veja `app/core/config.py` |
 
-PDFs só com **texto selecionável** funcionam bem; PDF escaneado (imagem) exigiria OCR (não incluído neste MVP). Os arquivos ficam em `uploads/` e o `docker-compose.yml` já persiste esse diretório no volume nomeado `uploads_data`.
+### Importacao de PDF com fallback OCR
+
+- PDFs com camada textual sao extraidos primeiro via `pypdf`.
+- Se o texto vier vazio ou abaixo de `MIN_EXTRACTED_CHARS` (padrao: 80), a aplicacao usa OCR local como fallback.
+- O OCR roda no container com `tesseract-ocr` e idiomas `eng+por` (ajustavel via `OCR_LANGUAGES`).
+- Em PDFs de baixa qualidade, manuscritos, tortos ou com pouco contraste, o OCR pode nao atingir texto suficiente.
+- Se nativo + OCR nao extrairem texto suficiente, a API retorna erro claro informando arquivo vazio/ilegivel/baixa qualidade.
+
+Os arquivos ficam em `uploads/` e o `docker-compose.yml` ja persiste esse diretorio no volume nomeado `uploads_data`.
 
 ## CI de imagem Docker (Docker Hub)
 

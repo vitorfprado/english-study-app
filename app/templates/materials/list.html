@@ -26,6 +26,10 @@
       <td class="actions">
         <a class="btn small primary" href="/materials/{{ m.id }}#gerar-deck" title="Gera outro deck a partir deste material">Novo deck</a>
         <a class="btn small" href="/materials/{{ m.id }}/edit">Editar</a>
+        <form method="post" action="/materials/{{ m.id }}/delete" class="deck-delete-form"
+          onsubmit="return confirm('Remover este material e os arquivos relacionados?');">
+          <button type="submit" class="btn small danger">Remover</button>
+        </form>
       </td>
     </tr>
     {% endfor %}

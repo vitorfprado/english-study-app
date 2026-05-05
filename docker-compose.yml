@@ -1,7 +1,9 @@
 services:
   app:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: ${DOCKERHUB_USERNAME:-vitorfprado}/english-study-app:${APP_VERSION:-latest}
-    pull_policy: always
     container_name: english-study-app
     env_file:
       - .env
