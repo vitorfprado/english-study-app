@@ -14,15 +14,19 @@ logger = logging.getLogger(__name__)
 def extract_text_from_pdf_bytes(data: bytes) -> str:
     settings = get_settings()
     native_text = _extract_native_text(data)
-    if _is_good_enough(native_text):
+    if _is_good_enough_for_native_only(native_text):
         logger.info("PDF extraido com estrategia nativa (pypdf).")
         return _truncate_text(native_text)
 
     logger.info("Texto nativo insuficiente; iniciando fallback OCR local.")
     ocr_text = extract_text_with_ocr(data, languages=settings.ocr_languages)
-    if _is_good_enough(ocr_text):
+    if _has_meaningful_text(ocr_text):
         logger.info("PDF extraido com sucesso por fallback OCR.")
         return _truncate_text(ocr_text)
+
+    if _has_meaningful_text(native_text):
+        logger.info("OCR nao retornou texto; mantendo extracao nativa curta, mas valida.")
+        return _truncate_text(native_text)
 
     logger.warning("Falha total na extracao de texto do PDF (nativo + OCR).")
     raise ValueError(
@@ -41,8 +45,14 @@ def _extract_native_text(data: bytes) -> str:
     return "\n\n".join(parts).strip()
 
 
-def _is_good_enough(text: str | None) -> bool:
+def _has_meaningful_text(text: str | None) -> bool:
     if not text:
+        return False
+    return bool(text.strip())
+
+
+def _is_good_enough_for_native_only(text: str | None) -> bool:
+    if not _has_meaningful_text(text):
         return False
     return len(text.strip()) >= get_settings().min_extracted_chars
 
